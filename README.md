@@ -38,4 +38,12 @@ The page will be available on [http://localhost:8080](http://localhost:8080) and
 
 ## Development
 
-Each directory contains a `package.json` with a placeholder `test` script. Run `npm test` in the respective directory.
+From the repository root you can manage both services:
+
+```bash
+npm run install:all   # install dependencies for backend and frontend
+npm test              # run tests for both parts
+npm start             # launch backend (port 3000) and frontend (port 8080)
+```
+
+Each subdirectory also contains its own `package.json` with individual scripts like `npm start` and `npm test`.
