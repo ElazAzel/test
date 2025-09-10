@@ -26,6 +26,8 @@ npm start
 - `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title` and `completed`).
 - `PATCH /projects/:id/tasks/:taskId` – update task fields like `title` or `completed`.
 - `DELETE /projects/:id/tasks/:taskId` – remove a task from a project.
+- `POST /projects/:id/tasks/:taskId/comments` – `{ "text": "..." }` with `Authorization: Bearer <token>` → add comment to a task.
+- `GET /projects/:id/tasks/:taskId/comments` – list comments for a task (each comment has `id`, `userId` and `text`).
 
 All data is stored in memory and clears on restart.
 

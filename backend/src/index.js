@@ -7,6 +7,8 @@ const projects = [];
 let nextProjectId = 1;
 const tasks = [];
 let nextTaskId = 1;
+const comments = [];
+let nextCommentId = 1;
 
 const parseBody = (req) => new Promise((resolve, reject) => {
   let data = '';
@@ -202,6 +204,55 @@ const requestListener = async (req, res) => {
     tasks.splice(index, 1);
     res.writeHead(204);
     return res.end();
+  }
+
+  const taskCommentsMatch = req.url.match(/^\/projects\/(\d+)\/tasks\/(\d+)\/comments$/);
+  if (taskCommentsMatch && req.method === 'POST') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(taskCommentsMatch[1], 10);
+    const taskId = parseInt(taskCommentsMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      const { text } = body;
+      if (!text) {
+        return send(res, 400, { error: 'text required' });
+      }
+      const comment = { id: nextCommentId++, taskId, userId: user.id, text };
+      comments.push(comment);
+      return send(res, 201, comment);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (taskCommentsMatch && req.method === 'GET') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(taskCommentsMatch[1], 10);
+    const taskId = parseInt(taskCommentsMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const taskComments = comments.filter(c => c.taskId === taskId);
+    return send(res, 200, taskComments);
   }
 
   return send(res, 404, { error: 'Not found' });
