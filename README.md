@@ -36,7 +36,7 @@ cd frontend
 npm start
 ```
 
-The page will be available on [http://localhost:8080](http://localhost:8080) and attempts to fetch the backend root.
+The page will be available on [http://localhost:8080](http://localhost:8080) and attempts to fetch the backend root (`/api`).
 
 ## Development
 
@@ -49,3 +49,14 @@ npm start             # launch backend (port 3000) and frontend (port 8080)
 ```
 
 Each subdirectory also contains its own `package.json` with individual scripts like `npm start` and `npm test`.
+
+## Deployment
+
+The project includes a `vercel.json` configuration so it can be deployed to [Vercel](https://vercel.com). The static frontend is served from the `frontend` directory, and the backend is exposed as a serverless function under `/api`.
+
+To deploy:
+
+```bash
+npm run install:all
+npx vercel
+```

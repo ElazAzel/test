@@ -157,8 +157,11 @@ const requestListener = async (req, res) => {
   return send(res, 404, { error: 'Not found' });
 };
 
-const PORT = process.env.PORT || 3000;
-const server = http.createServer(requestListener);
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  http.createServer(requestListener).listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
+
+module.exports = requestListener;
