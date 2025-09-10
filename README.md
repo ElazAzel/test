@@ -22,6 +22,8 @@ npm start
 - `POST /auth/login` – `{ "username": "...", "password": "..." }` → returns `{ token }`.
 - `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
 - `GET /projects` – list projects for current user.
+- `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.
+- `GET /projects/:id/tasks` – list tasks for a project.
 
 All data is stored in memory and clears on restart.
 

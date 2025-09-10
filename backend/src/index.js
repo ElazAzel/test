@@ -5,6 +5,8 @@ let nextUserId = 1;
 const sessions = new Map();
 const projects = [];
 let nextProjectId = 1;
+const tasks = [];
+let nextTaskId = 1;
 
 const parseBody = (req) => new Promise((resolve, reject) => {
   let data = '';
@@ -111,6 +113,45 @@ const requestListener = async (req, res) => {
     }
     const userProjects = projects.filter(p => p.ownerId === user.id);
     return send(res, 200, userProjects);
+  }
+
+  const projectTasksMatch = req.url.match(/^\/projects\/(\d+)\/tasks$/);
+  if (projectTasksMatch && req.method === 'POST') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectTasksMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      const { title } = body;
+      if (!title) {
+        return send(res, 400, { error: 'title required' });
+      }
+      const task = { id: nextTaskId++, projectId, title };
+      tasks.push(task);
+      return send(res, 201, task);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (projectTasksMatch && req.method === 'GET') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectTasksMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    return send(res, 200, projectTasks);
   }
 
   return send(res, 404, { error: 'Not found' });
