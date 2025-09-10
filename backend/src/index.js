@@ -42,7 +42,7 @@ const requestListener = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -132,7 +132,7 @@ const requestListener = async (req, res) => {
       if (!title) {
         return send(res, 400, { error: 'title required' });
       }
-      const task = { id: nextTaskId++, projectId, title };
+      const task = { id: nextTaskId++, projectId, title, completed: false };
       tasks.push(task);
       return send(res, 201, task);
     } catch (err) {
@@ -152,6 +152,56 @@ const requestListener = async (req, res) => {
     }
     const projectTasks = tasks.filter(t => t.projectId === projectId);
     return send(res, 200, projectTasks);
+  }
+
+  const singleTaskMatch = req.url.match(/^\/projects\/(\d+)\/tasks\/(\d+)$/);
+  if (singleTaskMatch && req.method === 'PATCH') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleTaskMatch[1], 10);
+    const taskId = parseInt(singleTaskMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      if (body.title !== undefined) {
+        task.title = body.title;
+      }
+      if (body.completed !== undefined) {
+        task.completed = !!body.completed;
+      }
+      return send(res, 200, task);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (singleTaskMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleTaskMatch[1], 10);
+    const taskId = parseInt(singleTaskMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const index = tasks.findIndex(t => t.id === taskId && t.projectId === projectId);
+    if (index === -1) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    tasks.splice(index, 1);
+    res.writeHead(204);
+    return res.end();
   }
 
   return send(res, 404, { error: 'Not found' });

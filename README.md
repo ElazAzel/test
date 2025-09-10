@@ -23,7 +23,9 @@ npm start
 - `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
 - `GET /projects` – list projects for current user.
 - `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.
-- `GET /projects/:id/tasks` – list tasks for a project.
+- `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title` and `completed`).
+- `PATCH /projects/:id/tasks/:taskId` – update task fields like `title` or `completed`.
+- `DELETE /projects/:id/tasks/:taskId` – remove a task from a project.
 
 All data is stored in memory and clears on restart.
 
