@@ -4,8 +4,26 @@ This repository contains a minimal starting point for a multi-user project manag
 
 ## Structure
 
-- `backend/` – Node.js server (no external dependencies) with placeholder routes for authentication and projects.
+- `backend/` – Node.js server with in-memory storage and basic routes for authentication and projects.
 - `frontend/` – Static HTML/JS placeholder for the client side.
+
+## Backend
+
+Run the server:
+
+```
+cd backend
+npm start
+```
+
+### API
+
+- `POST /auth/register` – `{ "username": "...", "password": "..." }` → create user.
+- `POST /auth/login` – `{ "username": "...", "password": "..." }` → returns `{ token }`.
+- `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
+- `GET /projects` – list projects for current user.
+
+All data is stored in memory and clears on restart.
 
 ## Development
 
