@@ -20,6 +20,7 @@ npm start
 
 - `POST /auth/register` – `{ "username": "...", "password": "..." }` → create user.
 - `POST /auth/login` – `{ "username": "...", "password": "..." }` → returns `{ token }`.
+- `POST /auth/logout` – with `Authorization: Bearer <token>` → invalidate the current session.
 - `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
 - `GET /projects` – list projects for current user.
 - `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.

@@ -89,6 +89,17 @@ const requestListener = async (req, res) => {
     }
   }
 
+  if (req.method === 'POST' && req.url === '/auth/logout') {
+    const auth = req.headers['authorization'] || '';
+    const token = auth.split(' ')[1];
+    if (token && sessions.has(token)) {
+      sessions.delete(token);
+      res.writeHead(204);
+      return res.end();
+    }
+    return send(res, 401, { error: 'invalid token' });
+  }
+
   if (req.method === 'POST' && req.url === '/projects') {
     const user = authenticate(req);
     if (!user) {
