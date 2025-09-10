@@ -25,6 +25,17 @@ npm start
 
 All data is stored in memory and clears on restart.
 
+## Frontend
+
+Serve the static page:
+
+```
+cd frontend
+npm start
+```
+
+The page will be available on [http://localhost:8080](http://localhost:8080) and attempts to fetch the backend root.
+
 ## Development
 
 Each directory contains a `package.json` with a placeholder `test` script. Run `npm test` in the respective directory.

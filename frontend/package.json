@@ -5,6 +5,7 @@
   "main": "src/main.js",
   "type": "module",
   "scripts": {
+    "start": "node server.cjs",
     "test": "echo \"No tests\""
   },
   "keywords": [],
