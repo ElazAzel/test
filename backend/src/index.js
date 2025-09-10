@@ -7,6 +7,8 @@ const projects = [];
 let nextProjectId = 1;
 const tasks = [];
 let nextTaskId = 1;
+const subtasks = [];
+let nextSubtaskId = 1;
 const comments = [];
 let nextCommentId = 1;
 
@@ -213,6 +215,115 @@ const requestListener = async (req, res) => {
       return send(res, 404, { error: 'task not found' });
     }
     tasks.splice(index, 1);
+    res.writeHead(204);
+    return res.end();
+  }
+
+  const taskSubtasksMatch = req.url.match(/^\/projects\/(\d+)\/tasks\/(\d+)\/subtasks$/);
+  if (taskSubtasksMatch && req.method === 'POST') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(taskSubtasksMatch[1], 10);
+    const taskId = parseInt(taskSubtasksMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      const { title } = body;
+      if (!title) {
+        return send(res, 400, { error: 'title required' });
+      }
+      const subtask = { id: nextSubtaskId++, taskId, title, completed: false };
+      subtasks.push(subtask);
+      return send(res, 201, subtask);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (taskSubtasksMatch && req.method === 'GET') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(taskSubtasksMatch[1], 10);
+    const taskId = parseInt(taskSubtasksMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const taskSubtasks = subtasks.filter(s => s.taskId === taskId);
+    return send(res, 200, taskSubtasks);
+  }
+
+  const singleSubtaskMatch = req.url.match(/^\/projects\/(\d+)\/tasks\/(\d+)\/subtasks\/(\d+)$/);
+  if (singleSubtaskMatch && req.method === 'PATCH') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleSubtaskMatch[1], 10);
+    const taskId = parseInt(singleSubtaskMatch[2], 10);
+    const subtaskId = parseInt(singleSubtaskMatch[3], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const subtask = subtasks.find(s => s.id === subtaskId && s.taskId === taskId);
+    if (!subtask) {
+      return send(res, 404, { error: 'subtask not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      if (body.title !== undefined) {
+        subtask.title = body.title;
+      }
+      if (body.completed !== undefined) {
+        subtask.completed = !!body.completed;
+      }
+      return send(res, 200, subtask);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (singleSubtaskMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleSubtaskMatch[1], 10);
+    const taskId = parseInt(singleSubtaskMatch[2], 10);
+    const subtaskId = parseInt(singleSubtaskMatch[3], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const index = subtasks.findIndex(s => s.id === subtaskId && s.taskId === taskId);
+    if (index === -1) {
+      return send(res, 404, { error: 'subtask not found' });
+    }
+    subtasks.splice(index, 1);
     res.writeHead(204);
     return res.end();
   }
