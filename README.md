@@ -29,9 +29,13 @@ npm start
 - `POST /projects/:id/members` – `{ "username": "..." }` with `Authorization: Bearer <token>` (owner only) → invite an existing user to the project.
 - `GET /projects/:id/members` – list project members (must belong to the project).
 - `DELETE /projects/:id/members/:userId` – remove a member from the project (owner only).
-- `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.
-- `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title` and `completed`).
-- `PATCH /projects/:id/tasks/:taskId` – update task fields like `title` or `completed`.
+- `POST /projects/:id/statuses` – `{ "name": "..." }` with `Authorization: Bearer <token>` (owner only) → add a task status column.
+- `GET /projects/:id/statuses` – list status columns for a project.
+- `PATCH /projects/:id/statuses/:statusId` – rename a status column (owner only).
+- `DELETE /projects/:id/statuses/:statusId` – remove a status column and reassign tasks (owner only).
+- `POST /projects/:id/tasks` – `{ "title": "...", "statusId?": number }` with `Authorization: Bearer <token>` → create task in project.
+- `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title`, `completed` and `statusId`).
+- `PATCH /projects/:id/tasks/:taskId` – update task fields like `title`, `completed` or `statusId`.
 - `DELETE /projects/:id/tasks/:taskId` – remove a task from a project.
 - `POST /projects/:id/tasks/:taskId/subtasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → add subtask to a task.
 - `GET /projects/:id/tasks/:taskId/subtasks` – list subtasks for a task (each subtask has `id`, `title` and `completed`).

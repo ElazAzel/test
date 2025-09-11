@@ -11,6 +11,8 @@ const subtasks = [];
 let nextSubtaskId = 1;
 const comments = [];
 let nextCommentId = 1;
+const statuses = [];
+let nextStatusId = 1;
 
 const parseBody = (req) => new Promise((resolve, reject) => {
   let data = '';
@@ -123,6 +125,8 @@ const requestListener = async (req, res) => {
       }
       const project = { id: nextProjectId++, name, ownerId: user.id, members: [user.id] };
       projects.push(project);
+      const defaults = ['todo', 'in-progress', 'done'].map(name => ({ id: nextStatusId++, projectId: project.id, name }));
+      statuses.push(...defaults);
       return send(res, 201, project);
     } catch (err) {
       return send(res, 400, { error: 'invalid json' });
@@ -186,6 +190,12 @@ const requestListener = async (req, res) => {
             comments.splice(k, 1);
           }
         }
+      }
+    }
+
+    for (let s = statuses.length - 1; s >= 0; s--) {
+      if (statuses[s].projectId === projectId) {
+        statuses.splice(s, 1);
       }
     }
 
@@ -264,6 +274,98 @@ const requestListener = async (req, res) => {
     return res.end();
   }
 
+  const projectStatusesMatch = req.url.match(/^\/projects\/(\d+)\/statuses$/);
+  if (projectStatusesMatch && req.method === 'POST') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectStatusesMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      const { name } = body;
+      if (!name) {
+        return send(res, 400, { error: 'name required' });
+      }
+      const status = { id: nextStatusId++, projectId, name };
+      statuses.push(status);
+      return send(res, 201, status);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (projectStatusesMatch && req.method === 'GET') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectStatusesMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const list = statuses.filter(s => s.projectId === projectId);
+    return send(res, 200, list);
+  }
+
+  const singleStatusMatch = req.url.match(/^\/projects\/(\d+)\/statuses\/(\d+)$/);
+  if (singleStatusMatch && req.method === 'PATCH') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleStatusMatch[1], 10);
+    const statusId = parseInt(singleStatusMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const status = statuses.find(s => s.id === statusId && s.projectId === projectId);
+    if (!status) {
+      return send(res, 404, { error: 'status not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      if (body.name !== undefined) {
+        status.name = body.name;
+      }
+      return send(res, 200, status);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (singleStatusMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleStatusMatch[1], 10);
+    const statusId = parseInt(singleStatusMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const index = statuses.findIndex(s => s.id === statusId && s.projectId === projectId);
+    if (index === -1) {
+      return send(res, 404, { error: 'status not found' });
+    }
+    const fallback = statuses.find(s => s.projectId === projectId && s.id !== statusId);
+    for (const t of tasks) {
+      if (t.projectId === projectId && t.statusId === statusId) {
+        t.statusId = fallback ? fallback.id : undefined;
+      }
+    }
+    statuses.splice(index, 1);
+    res.writeHead(204);
+    return res.end();
+  }
+
   const projectTasksMatch = req.url.match(/^\/projects\/(\d+)\/tasks$/);
   if (projectTasksMatch && req.method === 'POST') {
     const user = authenticate(req);
@@ -277,11 +379,15 @@ const requestListener = async (req, res) => {
     }
     try {
       const body = await parseBody(req);
-      const { title } = body;
+      const { title, statusId } = body;
       if (!title) {
         return send(res, 400, { error: 'title required' });
       }
-      const task = { id: nextTaskId++, projectId, title, completed: false };
+      let status = statuses.find(s => s.id === statusId && s.projectId === projectId);
+      if (!status) {
+        status = statuses.find(s => s.projectId === projectId);
+      }
+      const task = { id: nextTaskId++, projectId, title, completed: false, statusId: status ? status.id : undefined };
       tasks.push(task);
       return send(res, 201, task);
     } catch (err) {
@@ -326,6 +432,13 @@ const requestListener = async (req, res) => {
       }
       if (body.completed !== undefined) {
         task.completed = !!body.completed;
+      }
+      if (body.statusId !== undefined) {
+        const status = statuses.find(s => s.id === body.statusId && s.projectId === projectId);
+        if (!status) {
+          return send(res, 400, { error: 'invalid status' });
+        }
+        task.statusId = status.id;
       }
       return send(res, 200, task);
     } catch (err) {
