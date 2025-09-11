@@ -33,6 +33,8 @@ npm start
 - `DELETE /projects/:id/tasks/:taskId/subtasks/:subtaskId` – remove a subtask from a task.
 - `POST /projects/:id/tasks/:taskId/comments` – `{ "text": "..." }` with `Authorization: Bearer <token>` → add comment to a task.
 - `GET /projects/:id/tasks/:taskId/comments` – list comments for a task (each comment has `id`, `userId` and `text`).
+- `PATCH /projects/:id/tasks/:taskId/comments/:commentId` – update a comment's `text` (only its author).
+- `DELETE /projects/:id/tasks/:taskId/comments/:commentId` – remove a comment (only its author).
 
 All data is stored in memory and clears on restart.
 

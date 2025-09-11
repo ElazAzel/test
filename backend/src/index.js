@@ -377,6 +377,69 @@ const requestListener = async (req, res) => {
     return send(res, 200, taskComments);
   }
 
+  const singleCommentMatch = req.url.match(/^\/projects\/(\d+)\/tasks\/(\d+)\/comments\/(\d+)$/);
+  if (singleCommentMatch && req.method === 'PATCH') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleCommentMatch[1], 10);
+    const taskId = parseInt(singleCommentMatch[2], 10);
+    const commentId = parseInt(singleCommentMatch[3], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const comment = comments.find(c => c.id === commentId && c.taskId === taskId);
+    if (!comment) {
+      return send(res, 404, { error: 'comment not found' });
+    }
+    if (comment.userId !== user.id) {
+      return send(res, 403, { error: 'forbidden' });
+    }
+    try {
+      const body = await parseBody(req);
+      if (body.text !== undefined) {
+        comment.text = body.text;
+      }
+      return send(res, 200, comment);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (singleCommentMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleCommentMatch[1], 10);
+    const taskId = parseInt(singleCommentMatch[2], 10);
+    const commentId = parseInt(singleCommentMatch[3], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const task = tasks.find(t => t.id === taskId && t.projectId === projectId);
+    if (!task) {
+      return send(res, 404, { error: 'task not found' });
+    }
+    const index = comments.findIndex(c => c.id === commentId && c.taskId === taskId);
+    if (index === -1) {
+      return send(res, 404, { error: 'comment not found' });
+    }
+    if (comments[index].userId !== user.id) {
+      return send(res, 403, { error: 'forbidden' });
+    }
+    comments.splice(index, 1);
+    res.writeHead(204);
+    return res.end();
+  }
+
   return send(res, 404, { error: 'Not found' });
 };
 
