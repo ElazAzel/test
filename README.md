@@ -1,1 +1,85 @@
-# test
+# Project Management App
+
+This repository contains a minimal starting point for a multi-user project management application.
+
+## Structure
+
+- `backend/` – Node.js server with in-memory storage and basic routes for authentication and projects.
+- `frontend/` – Static HTML/JS placeholder for the client side.
+
+## Backend
+
+Run the server:
+
+```
+cd backend
+npm start
+```
+
+### API
+
+- `POST /auth/register` – `{ "username": "...", "password": "..." }` → create user.
+- `POST /auth/login` – `{ "username": "...", "password": "..." }` → returns `{ token }`.
+- `GET /auth/me` – with `Authorization: Bearer <token>` → returns current user info.
+- `POST /auth/logout` – with `Authorization: Bearer <token>` → invalidate the current session.
+- `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project (creator becomes owner).
+- `GET /projects` – list projects where the current user is a member.
+- `PATCH /projects/:id` – update project fields like `name` (owner only).
+- `DELETE /projects/:id` – remove a project and all its tasks (owner only).
+- `POST /projects/:id/members` – `{ "username": "..." }` with `Authorization: Bearer <token>` (owner only) → invite an existing user to the project.
+- `GET /projects/:id/members` – list project members (must belong to the project).
+- `DELETE /projects/:id/members/:userId` – remove a member from the project (owner only).
+- `POST /projects/:id/statuses` – `{ "name": "..." }` with `Authorization: Bearer <token>` (owner only) → add a task status column.
+- `GET /projects/:id/statuses` – list status columns for a project.
+- `PATCH /projects/:id/statuses/:statusId` – rename a status column (owner only).
+- `DELETE /projects/:id/statuses/:statusId` – remove a status column and reassign tasks (owner only).
+- `POST /projects/:id/tasks` – `{ "title": "...", "statusId?": number }` with `Authorization: Bearer <token>` → create task in project.
+- `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title`, `completed` and `statusId`).
+- `PATCH /projects/:id/tasks/:taskId` – update task fields like `title`, `completed` or `statusId`.
+- `DELETE /projects/:id/tasks/:taskId` – remove a task from a project.
+- `POST /projects/:id/tasks/:taskId/subtasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → add subtask to a task.
+- `GET /projects/:id/tasks/:taskId/subtasks` – list subtasks for a task (each subtask has `id`, `title` and `completed`).
+- `PATCH /projects/:id/tasks/:taskId/subtasks/:subtaskId` – update subtask fields like `title` or `completed`.
+- `DELETE /projects/:id/tasks/:taskId/subtasks/:subtaskId` – remove a subtask from a task.
+- `POST /projects/:id/tasks/:taskId/comments` – `{ "text": "..." }` with `Authorization: Bearer <token>` → add comment to a task.
+- `GET /projects/:id/tasks/:taskId/comments` – list comments for a task (each comment has `id`, `userId` and `text`).
+- `PATCH /projects/:id/tasks/:taskId/comments/:commentId` – update a comment's `text` (only its author).
+- `DELETE /projects/:id/tasks/:taskId/comments/:commentId` – remove a comment (only its author).
+
+All data is stored in memory and clears on restart.
+
+## Frontend
+
+Serve the static page:
+
+```
+cd frontend
+npm start
+```
+
+The app at [http://localhost:8080](http://localhost:8080) now provides a basic interface to register or log in, create
+projects, and add tasks. All requests are sent to the backend via relative `/api` paths so the same build works when
+deployed to Vercel.
+
+## Development
+
+From the repository root you can manage both services:
+
+```bash
+npm run install:all   # install dependencies for backend and frontend
+npm test              # run tests for both parts
+npm start             # launch backend (port 3000) and frontend (port 8080)
+```
+
+Each subdirectory also contains its own `package.json` with individual scripts like `npm start` and `npm test`.
+
+## Deployment
+
+The project includes a `vercel.json` configuration so it can be deployed to [Vercel](https://vercel.com). The static frontend is served from the `frontend` directory, and the backend is exposed as a serverless function under `/api`.
+
+To deploy:
+
+```bash
+npm run install:all
+npx vercel
+```

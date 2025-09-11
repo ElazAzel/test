@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Manager</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 1rem; }
+    form { margin-bottom: 1rem; }
+    input { margin-right: 0.5rem; }
+    ul { list-style: none; padding-left: 0; }
+    li { cursor: pointer; margin: 0.25rem 0; }
+    #app, #projectDetail { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Project Manager Frontend</h1>
+
+  <div id="auth">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <input name="username" placeholder="username" required>
+      <input name="password" type="password" placeholder="password" required>
+      <button>Register</button>
+    </form>
+
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input name="username" placeholder="username" required>
+      <input name="password" type="password" placeholder="password" required>
+      <button>Login</button>
+    </form>
+  </div>
+
+  <div id="app">
+    <button id="logoutBtn">Logout</button>
+
+    <h2>Create Project</h2>
+    <form id="projectForm">
+      <input name="name" placeholder="project name" required>
+      <button>Add</button>
+    </form>
+
+    <h2>Your Projects</h2>
+    <ul id="projectList"></ul>
+
+    <div id="projectDetail">
+      <h3>Tasks for <span id="projectTitle"></span></h3>
+      <form id="taskForm">
+        <input name="title" placeholder="task title" required>
+        <button>Add</button>
+      </form>
+      <ul id="taskList"></ul>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
