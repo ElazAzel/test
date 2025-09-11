@@ -121,7 +121,7 @@ const requestListener = async (req, res) => {
       if (!name) {
         return send(res, 400, { error: 'name required' });
       }
-      const project = { id: nextProjectId++, name, ownerId: user.id };
+      const project = { id: nextProjectId++, name, ownerId: user.id, members: [user.id] };
       projects.push(project);
       return send(res, 201, project);
     } catch (err) {
@@ -134,7 +134,7 @@ const requestListener = async (req, res) => {
     if (!user) {
       return send(res, 401, { error: 'unauthorized' });
     }
-    const userProjects = projects.filter(p => p.ownerId === user.id);
+    const userProjects = projects.filter(p => p.members.includes(user.id));
     return send(res, 200, userProjects);
   }
 
@@ -193,6 +193,77 @@ const requestListener = async (req, res) => {
     return res.end();
   }
 
+  const projectMembersMatch = req.url.match(/^\/projects\/(\d+)\/members$/);
+  if (projectMembersMatch && req.method === 'POST') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectMembersMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      const { username } = body;
+      if (!username) {
+        return send(res, 400, { error: 'username required' });
+      }
+      const member = users.find(u => u.username === username);
+      if (!member) {
+        return send(res, 404, { error: 'user not found' });
+      }
+      if (!project.members.includes(member.id)) {
+        project.members.push(member.id);
+      }
+      return send(res, 201, { id: member.id, username: member.username });
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (projectMembersMatch && req.method === 'GET') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(projectMembersMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    const list = project.members.map(id => {
+      const u = users.find(usr => usr.id === id);
+      return { id: u.id, username: u.username };
+    });
+    return send(res, 200, list);
+  }
+
+  const singleMemberMatch = req.url.match(/^\/projects\/(\d+)\/members\/(\d+)$/);
+  if (singleMemberMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleMemberMatch[1], 10);
+    const memberId = parseInt(singleMemberMatch[2], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    if (memberId === project.ownerId) {
+      return send(res, 400, { error: 'cannot remove owner' });
+    }
+    const index = project.members.indexOf(memberId);
+    if (index === -1) {
+      return send(res, 404, { error: 'member not found' });
+    }
+    project.members.splice(index, 1);
+    res.writeHead(204);
+    return res.end();
+  }
+
   const projectTasksMatch = req.url.match(/^\/projects\/(\d+)\/tasks$/);
   if (projectTasksMatch && req.method === 'POST') {
     const user = authenticate(req);
@@ -200,7 +271,7 @@ const requestListener = async (req, res) => {
       return send(res, 401, { error: 'unauthorized' });
     }
     const projectId = parseInt(projectTasksMatch[1], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -224,7 +295,7 @@ const requestListener = async (req, res) => {
       return send(res, 401, { error: 'unauthorized' });
     }
     const projectId = parseInt(projectTasksMatch[1], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -240,7 +311,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(singleTaskMatch[1], 10);
     const taskId = parseInt(singleTaskMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -269,7 +340,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(singleTaskMatch[1], 10);
     const taskId = parseInt(singleTaskMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -290,7 +361,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(taskSubtasksMatch[1], 10);
     const taskId = parseInt(taskSubtasksMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -319,7 +390,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(taskSubtasksMatch[1], 10);
     const taskId = parseInt(taskSubtasksMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -340,7 +411,7 @@ const requestListener = async (req, res) => {
     const projectId = parseInt(singleSubtaskMatch[1], 10);
     const taskId = parseInt(singleSubtaskMatch[2], 10);
     const subtaskId = parseInt(singleSubtaskMatch[3], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -374,7 +445,7 @@ const requestListener = async (req, res) => {
     const projectId = parseInt(singleSubtaskMatch[1], 10);
     const taskId = parseInt(singleSubtaskMatch[2], 10);
     const subtaskId = parseInt(singleSubtaskMatch[3], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -399,7 +470,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(taskCommentsMatch[1], 10);
     const taskId = parseInt(taskCommentsMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -428,7 +499,7 @@ const requestListener = async (req, res) => {
     }
     const projectId = parseInt(taskCommentsMatch[1], 10);
     const taskId = parseInt(taskCommentsMatch[2], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -449,7 +520,7 @@ const requestListener = async (req, res) => {
     const projectId = parseInt(singleCommentMatch[1], 10);
     const taskId = parseInt(singleCommentMatch[2], 10);
     const commentId = parseInt(singleCommentMatch[3], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }
@@ -483,7 +554,7 @@ const requestListener = async (req, res) => {
     const projectId = parseInt(singleCommentMatch[1], 10);
     const taskId = parseInt(singleCommentMatch[2], 10);
     const commentId = parseInt(singleCommentMatch[3], 10);
-    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    const project = projects.find(p => p.id === projectId && p.members.includes(user.id));
     if (!project) {
       return send(res, 404, { error: 'project not found' });
     }

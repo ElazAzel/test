@@ -22,10 +22,13 @@ npm start
 - `POST /auth/login` – `{ "username": "...", "password": "..." }` → returns `{ token }`.
 - `GET /auth/me` – with `Authorization: Bearer <token>` → returns current user info.
 - `POST /auth/logout` – with `Authorization: Bearer <token>` → invalidate the current session.
-- `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
-- `GET /projects` – list projects for current user.
-- `PATCH /projects/:id` – update project fields like `name`.
-- `DELETE /projects/:id` – remove a project and all its tasks.
+- `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project (creator becomes owner).
+- `GET /projects` – list projects where the current user is a member.
+- `PATCH /projects/:id` – update project fields like `name` (owner only).
+- `DELETE /projects/:id` – remove a project and all its tasks (owner only).
+- `POST /projects/:id/members` – `{ "username": "..." }` with `Authorization: Bearer <token>` (owner only) → invite an existing user to the project.
+- `GET /projects/:id/members` – list project members (must belong to the project).
+- `DELETE /projects/:id/members/:userId` – remove a member from the project (owner only).
 - `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.
 - `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title` and `completed`).
 - `PATCH /projects/:id/tasks/:taskId` – update task fields like `title` or `completed`.
