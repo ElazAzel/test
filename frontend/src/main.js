@@ -120,20 +120,19 @@ fetch('/api')
   .then(data => console.log('API says:', data))
   .catch(err => console.error('API error', err));
 
+// Render the appropriate section immediately
+updateUI();
+
+// Verify any stored token without blocking the initial render
 if (token) {
   fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
     .then(r => {
       if (!r.ok) throw new Error();
       return r.json();
     })
-    .then(data => {
-      console.log('Logged in as:', data);
-      updateUI();
-    })
+    .then(data => console.log('Logged in as:', data))
     .catch(() => {
       setToken(null);
       updateUI();
     });
-} else {
-  updateUI();
 }
