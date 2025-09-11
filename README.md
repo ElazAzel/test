@@ -24,6 +24,8 @@ npm start
 - `POST /auth/logout` – with `Authorization: Bearer <token>` → invalidate the current session.
 - `POST /projects` – `{ "name": "..." }` with `Authorization: Bearer <token>` → create project.
 - `GET /projects` – list projects for current user.
+- `PATCH /projects/:id` – update project fields like `name`.
+- `DELETE /projects/:id` – remove a project and all its tasks.
 - `POST /projects/:id/tasks` – `{ "title": "..." }` with `Authorization: Bearer <token>` → create task in project.
 - `GET /projects/:id/tasks` – list tasks for a project (each task has `id`, `title` and `completed`).
 - `PATCH /projects/:id/tasks/:taskId` – update task fields like `title` or `completed`.

@@ -138,6 +138,61 @@ const requestListener = async (req, res) => {
     return send(res, 200, userProjects);
   }
 
+  const singleProjectMatch = req.url.match(/^\/projects\/(\d+)$/);
+  if (singleProjectMatch && req.method === 'PATCH') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleProjectMatch[1], 10);
+    const project = projects.find(p => p.id === projectId && p.ownerId === user.id);
+    if (!project) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    try {
+      const body = await parseBody(req);
+      if (body.name !== undefined) {
+        project.name = body.name;
+      }
+      return send(res, 200, project);
+    } catch (err) {
+      return send(res, 400, { error: 'invalid json' });
+    }
+  }
+
+  if (singleProjectMatch && req.method === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    const projectId = parseInt(singleProjectMatch[1], 10);
+    const index = projects.findIndex(p => p.id === projectId && p.ownerId === user.id);
+    if (index === -1) {
+      return send(res, 404, { error: 'project not found' });
+    }
+    projects.splice(index, 1);
+
+    for (let i = tasks.length - 1; i >= 0; i--) {
+      if (tasks[i].projectId === projectId) {
+        const removedTaskId = tasks[i].id;
+        tasks.splice(i, 1);
+        for (let j = subtasks.length - 1; j >= 0; j--) {
+          if (subtasks[j].taskId === removedTaskId) {
+            subtasks.splice(j, 1);
+          }
+        }
+        for (let k = comments.length - 1; k >= 0; k--) {
+          if (comments[k].taskId === removedTaskId) {
+            comments.splice(k, 1);
+          }
+        }
+      }
+    }
+
+    res.writeHead(204);
+    return res.end();
+  }
+
   const projectTasksMatch = req.url.match(/^\/projects\/(\d+)\/tasks$/);
   if (projectTasksMatch && req.method === 'POST') {
     const user = authenticate(req);
