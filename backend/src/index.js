@@ -102,6 +102,14 @@ const requestListener = async (req, res) => {
     return send(res, 401, { error: 'invalid token' });
   }
 
+  if (req.method === 'GET' && req.url === '/auth/me') {
+    const user = authenticate(req);
+    if (!user) {
+      return send(res, 401, { error: 'unauthorized' });
+    }
+    return send(res, 200, { id: user.id, username: user.username });
+  }
+
   if (req.method === 'POST' && req.url === '/projects') {
     const user = authenticate(req);
     if (!user) {
