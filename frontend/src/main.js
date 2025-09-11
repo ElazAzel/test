@@ -98,7 +98,7 @@ async function loadTasks() {
   taskListEl.innerHTML = '';
   tasks.forEach(t => {
     const li = document.createElement('li');
-    li.textContent = t.title + (t.completed ? ' \u2714' : '');
+    li.textContent = t.title + (t.dueDate ? ` (${t.dueDate})` : '') + (t.completed ? ' \u2714' : '');
     taskListEl.appendChild(li);
   });
 }
@@ -109,7 +109,7 @@ document.getElementById('taskForm').addEventListener('submit', async e => {
   await fetch(`/api/projects/${currentProjectId}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ title: form.title.value })
+    body: JSON.stringify({ title: form.title.value, dueDate: form.dueDate.value || undefined })
   });
   form.reset();
   loadTasks();

@@ -379,7 +379,7 @@ const requestListener = async (req, res) => {
     }
     try {
       const body = await parseBody(req);
-      const { title, statusId } = body;
+      const { title, statusId, dueDate } = body;
       if (!title) {
         return send(res, 400, { error: 'title required' });
       }
@@ -387,7 +387,14 @@ const requestListener = async (req, res) => {
       if (!status) {
         status = statuses.find(s => s.projectId === projectId);
       }
-      const task = { id: nextTaskId++, projectId, title, completed: false, statusId: status ? status.id : undefined };
+      const task = {
+        id: nextTaskId++,
+        projectId,
+        title,
+        completed: false,
+        statusId: status ? status.id : undefined,
+        dueDate,
+      };
       tasks.push(task);
       return send(res, 201, task);
     } catch (err) {
@@ -439,6 +446,9 @@ const requestListener = async (req, res) => {
           return send(res, 400, { error: 'invalid status' });
         }
         task.statusId = status.id;
+      }
+      if (body.dueDate !== undefined) {
+         task.dueDate = body.dueDate;
       }
       return send(res, 200, task);
     } catch (err) {
