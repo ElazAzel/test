@@ -6,63 +6,848 @@
   <title>Project Manager</title>
   <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAn8B9/Zs1wAAAABJRU5ErkJggg==" />
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 1rem; }
-    form { margin-bottom: 1rem; }
-    input { margin-right: 0.5rem; }
-    ul { list-style: none; padding-left: 0; }
-    li { display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0; }
-    li span { flex: 1; }
-    li button { margin-left: 0.5rem; }
-    #app, #projectDetail { display: none; }
+    :root {
+      color-scheme: light dark;
+      --sidebar-bg: rgba(15, 23, 42, 0.92);
+      --sidebar-border: rgba(255, 255, 255, 0.06);
+      --workspace-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 48%, #312e81 100%);
+      --card-bg: rgba(15, 23, 42, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: rgba(241, 245, 249, 0.75);
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --danger: #f87171;
+      --success: #4ade80;
+      --shadow-lg: 0 24px 45px rgba(8, 15, 40, 0.4);
+      --shadow-md: 0 16px 32px rgba(8, 15, 40, 0.25);
+      font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--workspace-bg);
+      color: var(--text-primary);
+      display: flex;
+      align-items: stretch;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: minmax(320px, 360px) 1fr;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      padding: 2.5rem 2rem;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand__logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: radial-gradient(circle at 30% 30%, #38bdf8, transparent 65%),
+        linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(14, 165, 233, 0.1));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand__title {
+      font-size: 1.4rem;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .api-status {
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--card-border);
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .api-status[data-state="online"] {
+      border-color: rgba(74, 222, 128, 0.3);
+      color: var(--success);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .api-status[data-state="error"] {
+      border-color: rgba(248, 113, 113, 0.3);
+      color: var(--danger);
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .card h2 {
+      margin: 0 0 0.75rem 0;
+      font-size: 1.1rem;
+    }
+
+    .card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .eyebrow {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-secondary);
+      margin: 0 0 0.35rem 0;
+    }
+
+    .ghost {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: inherit;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .ghost:hover {
+      background: rgba(148, 163, 184, 0.12);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .ghost.danger {
+      border-color: rgba(248, 113, 113, 0.4);
+      color: var(--danger);
+    }
+
+    .ghost.danger:hover {
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    label span,
+    label strong {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 0.35rem;
+      color: var(--text-secondary);
+    }
+
+    input,
+    select,
+    textarea {
+      border-radius: 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.45);
+      padding: 0.65rem 0.85rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.24);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .primary-btn {
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      color: #0f172a;
+      font-weight: 600;
+      padding: 0.7rem 1.2rem;
+      align-self: flex-start;
+      box-shadow: 0 12px 25px rgba(14, 165, 233, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 35px rgba(14, 165, 233, 0.35);
+    }
+
+    .project-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .project-pill {
+      width: 100%;
+      border: none;
+      background: rgba(148, 163, 184, 0.12);
+      border-radius: 1rem;
+      padding: 0.9rem 1rem;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .project-pill:hover,
+    .project-pill[aria-current="true"] {
+      background: rgba(56, 189, 248, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .project-pill__meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.72rem;
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .badge.owner {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--accent);
+    }
+
+    .member-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 0.75rem;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .workspace {
+      padding: 2.5rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      overflow-y: auto;
+    }
+
+    .workspace__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .workspace__header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .workspace__header p {
+      margin: 0.5rem 0 0 0;
+      color: var(--text-secondary);
+    }
+
+    .workspace__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .empty-state {
+      border-radius: 1.5rem;
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      padding: 3rem;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .empty-state h2 {
+      margin: 0 0 0.75rem 0;
+    }
+
+    .board-area {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .board-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.25rem;
+      justify-content: space-between;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 1.25rem 1.5rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: var(--shadow-md);
+    }
+
+    .inline-form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .inline-form input,
+    .inline-form select {
+      min-width: 160px;
+    }
+
+    .kanban {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .kanban-column {
+      min-width: 260px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      max-height: 70vh;
+      box-shadow: var(--shadow-md);
+    }
+
+    .kanban-column__header {
+      padding: 1rem 1.2rem 0.5rem 1.2rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .kanban-column__header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .kanban-column__tasks {
+      padding: 0.5rem 1rem 1.25rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow-y: auto;
+    }
+
+    .task-card {
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-md);
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.55);
+    }
+
+    .task-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .task-card__title {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .task-card__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .task-card__controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-card__controls select {
+      min-width: 120px;
+    }
+
+    .badge.priority-low {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+    }
+
+    .badge.priority-medium {
+      background: rgba(147, 197, 253, 0.16);
+      color: #93c5fd;
+    }
+
+    .badge.priority-high {
+      background: rgba(248, 113, 113, 0.18);
+      color: var(--danger);
+    }
+
+    .status-card {
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .status-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 0.8rem;
+      border-radius: 0.85rem;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .status-actions {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .task-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(420px, 100%);
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.96);
+      border-left: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: -24px 0 48px rgba(8, 15, 40, 0.55);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 2rem 3rem;
+      gap: 1.5rem;
+      z-index: 20;
+    }
+
+    .task-drawer.open {
+      transform: translateX(0%);
+    }
+
+    .task-drawer__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .task-drawer__header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .task-section h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 1rem;
+    }
+
+    .task-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .subtask-list,
+    .comment-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .subtask-item,
+    .comment-item {
+      background: rgba(148, 163, 184, 0.12);
+      border-radius: 0.85rem;
+      padding: 0.65rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .subtask-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .comment-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.75rem 1.2rem;
+      border-radius: 999px;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 50;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
+    }
+
+    #toast[data-variant="error"] {
+      border-color: rgba(248, 113, 113, 0.4);
+      color: var(--danger);
+    }
+
+    #toast[data-variant="success"] {
+      border-color: rgba(74, 222, 128, 0.4);
+      color: var(--success);
+    }
+
+    @media (max-width: 1100px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-right: none;
+        border-bottom: 1px solid var(--sidebar-border);
+      }
+
+      .workspace {
+        padding: 2rem 1.5rem 6rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .board-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .inline-form {
+        width: 100%;
+      }
+
+      .inline-form input,
+      .inline-form select,
+      .primary-btn {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Project Manager Frontend</h1>
-  <p id="apiStatus" role="status" aria-live="polite">Checking API status…</p>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo"></div>
+        <h1 class="brand__title">Project Manager</h1>
+      </div>
+      <p id="apiStatus" class="api-status" role="status" aria-live="polite">Checking API status…</p>
 
-  <div id="auth">
-    <h2>Register</h2>
-    <form id="registerForm">
-      <input name="username" placeholder="username" required>
-      <input name="password" type="password" placeholder="password" required>
-      <button>Register</button>
-    </form>
+      <section id="auth" class="card">
+        <h2>Access your workspace</h2>
+        <form id="registerForm" autocomplete="off">
+          <div>
+            <label>
+              <span>Username</span>
+              <input name="username" placeholder="j.doe" required />
+            </label>
+          </div>
+          <div>
+            <label>
+              <span>Password</span>
+              <input name="password" type="password" placeholder="Minimum 8 characters" required />
+            </label>
+          </div>
+          <button class="primary-btn">Register</button>
+        </form>
 
-    <h2>Login</h2>
-    <form id="loginForm">
-      <input name="username" placeholder="username" required>
-      <input name="password" type="password" placeholder="password" required>
-      <button>Login</button>
-    </form>
+        <hr style="border: none; border-top: 1px solid rgba(148, 163, 184, 0.15); margin: 1.25rem 0;" />
+
+        <form id="loginForm" autocomplete="off">
+          <div>
+            <label>
+              <span>Username</span>
+              <input name="username" placeholder="j.doe" required />
+            </label>
+          </div>
+          <div>
+            <label>
+              <span>Password</span>
+              <input name="password" type="password" placeholder="Your password" required />
+            </label>
+          </div>
+          <button class="primary-btn">Sign in</button>
+        </form>
+      </section>
+
+      <section id="app" class="card-stack" hidden>
+        <div class="card" id="userCard">
+          <p class="eyebrow">Signed in as</p>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <h2 id="currentUserName" style="margin: 0; font-size: 1.4rem;">—</h2>
+            <button id="logoutBtn" class="ghost">Logout</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Create project</h2>
+          <form id="projectForm" autocomplete="off">
+            <label>
+              <span>Project name</span>
+              <input name="name" placeholder="Product launch" required />
+            </label>
+            <button class="primary-btn">Create project</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h2>Your projects</h2>
+            <button id="refreshProjectsBtn" type="button" class="ghost">Refresh</button>
+          </div>
+          <ul id="projectList" class="project-list"></ul>
+        </div>
+
+        <div class="card" id="memberCard" hidden>
+          <div class="card__header">
+            <h2>Project team</h2>
+            <span id="projectRoleLabel" class="badge" hidden></span>
+          </div>
+          <ul id="memberList" class="member-list"></ul>
+          <form id="memberForm" class="inline-form" autocomplete="off" hidden>
+            <input name="username" placeholder="Invite by username" required />
+            <button class="primary-btn" style="padding: 0.6rem 1.2rem;">Invite</button>
+          </form>
+        </div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace__header">
+        <div>
+          <h1 id="workspaceTitle">Plan unforgettable events</h1>
+          <p id="workspaceMeta">Create a project to unlock kanban boards, subtasks, comments, and collaboration tools.</p>
+        </div>
+        <div class="workspace__actions" id="projectActions" hidden>
+          <button id="renameProjectBtn" type="button" class="ghost">Rename</button>
+          <button id="deleteProjectBtn" type="button" class="ghost danger">Delete</button>
+        </div>
+      </header>
+
+      <section id="emptyState" class="empty-state">
+        <h2>Welcome aboard!</h2>
+        <p>Select a project on the left or create a new one to start coordinating preparation, execution, and closing activities.</p>
+      </section>
+
+      <section id="boardArea" class="board-area" hidden>
+        <div class="board-controls">
+          <form id="taskForm" class="inline-form" autocomplete="off">
+            <input name="title" placeholder="Task title" required />
+            <input type="date" name="dueDate" aria-label="Due date" />
+            <select name="priority" aria-label="Priority">
+              <option value="low">Low priority</option>
+              <option value="medium" selected>Medium priority</option>
+              <option value="high">High priority</option>
+            </select>
+            <select name="statusId" id="taskCreateStatusSelect" aria-label="Status"></select>
+            <button class="primary-btn">Add task</button>
+          </form>
+          <div class="board-controls__info" id="taskSummary">No tasks yet</div>
+        </div>
+
+        <div id="kanbanBoard" class="kanban" aria-live="polite"></div>
+
+        <section class="card status-card">
+          <header>
+            <h2 style="margin-bottom: 0.35rem;">Status columns</h2>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Customize the kanban workflow for this project.</p>
+          </header>
+          <ul id="statusList" class="status-list"></ul>
+          <form id="statusForm" class="inline-form" hidden>
+            <input name="name" placeholder="Add column" required />
+            <button class="primary-btn" style="padding: 0.6rem 1.2rem;">Add status</button>
+          </form>
+        </section>
+      </section>
+    </main>
   </div>
 
-  <div id="app">
-    <button id="logoutBtn">Logout</button>
-
-    <h2>Create Project</h2>
-    <form id="projectForm">
-      <input name="name" placeholder="project name" required>
-      <button>Add</button>
-    </form>
-
-    <h2>Your Projects</h2>
-    <ul id="projectList"></ul>
-
-    <div id="projectDetail">
-      <h3>Tasks for <span id="projectTitle"></span></h3>
-      <form id="taskForm">
-        <input name="title" placeholder="task title" required>
-        <input type="date" name="dueDate">
-        <select name="priority">
-          <option value="low">low</option>
-          <option value="medium" selected>medium</option>
-          <option value="high">high</option>
-        </select>
-        <button>Add</button>
-      </form>
-      <ul id="taskList"></ul>
+  <aside id="taskDrawer" class="task-drawer" aria-hidden="true">
+    <div class="task-drawer__header">
+      <h2 id="taskDrawerTitle">Task details</h2>
+      <button id="closeTaskDrawer" class="ghost" aria-label="Close details">Close</button>
     </div>
-  </div>
+    <form id="taskEditForm">
+      <label>
+        <span>Title</span>
+        <input id="taskDetailTitle" name="title" required />
+      </label>
+      <label>
+        <span>Status</span>
+        <select id="taskDetailStatus" name="status"></select>
+      </label>
+      <label>
+        <span>Priority</span>
+        <select id="taskDetailPriority" name="priority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+      <label>
+        <span>Due date</span>
+        <input type="date" id="taskDetailDueDate" name="dueDate" />
+      </label>
+      <label style="display: flex; align-items: center; gap: 0.6rem;">
+        <input type="checkbox" id="taskDetailCompleted" />
+        <strong>Mark as completed</strong>
+      </label>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="primary-btn" id="taskDetailSave">Save changes</button>
+        <button type="button" id="taskDeleteBtn" class="ghost danger">Delete task</button>
+      </div>
+    </form>
+
+    <section class="task-section">
+      <h3>Subtasks</h3>
+      <ul id="subtaskList" class="subtask-list"></ul>
+      <form id="subtaskForm" class="inline-form" autocomplete="off">
+        <input name="title" placeholder="Add subtask" required />
+        <button class="primary-btn" style="padding: 0.6rem 1.2rem;">Add</button>
+      </form>
+    </section>
+
+    <section class="task-section">
+      <h3>Comments</h3>
+      <ul id="commentList" class="comment-list"></ul>
+      <form id="commentForm" autocomplete="off">
+        <textarea name="text" id="commentText" placeholder="Share an update or ask a question" required></textarea>
+        <button class="primary-btn" style="align-self: flex-start;">Post comment</button>
+      </form>
+    </section>
+  </aside>
+
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="./src/main.js"></script>
 </body>

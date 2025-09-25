@@ -1,11 +1,11 @@
 # Project Management App
 
-This repository contains a minimal starting point for a multi-user project management application.
+This repository contains a multi-user project management application that spans the full lifecycle of event-style projects: preparation, execution, and closing. It ships with secure authentication, collaborative project spaces, kanban workflows, subtasks, comments, prioritisation, and persistence-ready backend storage.
 
 ## Structure
 
-- `backend/` – Node.js server with in-memory storage and basic routes for authentication and projects.
-- `frontend/` – Static HTML/JS placeholder for the client side.
+- `backend/` – Node.js server that handles authentication, membership, projects, tasks, statuses, subtasks, comments, and persistent storage.
+- `frontend/` – Modern single-page experience with authentication, kanban board, task drawer, member management, and Vercel-friendly routing.
 
 ## Backend
 
@@ -60,16 +60,23 @@ If `DATA_FILE` points to a new directory it will be created automatically.
 
 ## Frontend
 
-Serve the static page:
+Serve the static application:
 
 ```
 cd frontend
 npm start
 ```
 
-The app at [http://localhost:8080](http://localhost:8080) now provides a basic interface to register or log in, create
-projects, and add tasks. Tasks in the list can be marked complete via a checkbox or removed entirely. When running locally it automatically sends API requests to the backend on port `3000`, while
-the deployed build uses the same origin with an `/api` prefix so the configuration works unchanged on Vercel.
+The app at [http://localhost:8080](http://localhost:8080) offers a full dashboard experience optimised for both desktop and mobile:
+
+- **Authentication & session recovery** – register, sign in, and resume sessions automatically thanks to persisted tokens.
+- **Project workspace** – manage multiple closed projects, see member counts, rename or archive initiatives, and invite collaborators.
+- **Kanban board** – drag-free yet column-based workflow where tasks are grouped by status, display due dates, priorities, completion state, and live subtasks/comment counters.
+- **Task composer** – capture title, due date, priority, and target status in one inline control bar.
+- **Detail drawer** – inspect or update a task, toggle completion, move between statuses, adjust priority/due date, manage subtasks, and collaborate via threaded comments.
+- **Role-aware controls** – project owners can create, rename, or remove status columns and manage members directly from the sidebar, while contributors retain task and conversation tools.
+
+When running locally the frontend automatically talks to the backend on port `3000`. In production (for example on Vercel) it uses same-origin requests under the `/api` prefix so no manual configuration is required.
 
 ## Development
 
