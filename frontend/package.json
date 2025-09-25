@@ -1,0 +1,14 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Project management frontend",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

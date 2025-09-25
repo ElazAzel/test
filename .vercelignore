@@ -1,0 +1,4 @@
+# Exclude tests and repository metadata from deployments
+.github
+backend/test
+frontend/test

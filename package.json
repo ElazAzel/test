@@ -1,0 +1,17 @@
+{
+  "name": "project-management-app",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Full-stack project management application",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/project-management-app"
+  },
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "start": "npm --prefix backend start & npm --prefix frontend start",
+    "deploy": "npm run install:all && npx vercel --prod"
+  }
+}
