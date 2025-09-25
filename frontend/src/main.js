@@ -23,6 +23,13 @@ const projectDetail = document.getElementById('projectDetail');
 const projectTitle = document.getElementById('projectTitle');
 const projectListEl = document.getElementById('projectList');
 const taskListEl = document.getElementById('taskList');
+const apiStatusEl = document.getElementById('apiStatus');
+
+const setApiStatus = (message) => {
+  if (apiStatusEl) {
+    apiStatusEl.textContent = message;
+  }
+};
 
 function setToken(newToken, expiresAt) {
   token = newToken;
@@ -220,9 +227,29 @@ document.getElementById('taskForm').addEventListener('submit', async e => {
 });
 
 fetch(API_BASE)
-  .then(r => r.json())
-  .then(data => console.log('API says:', data))
-  .catch(err => console.error('API error', err));
+  .then(async (response) => {
+    const contentType = response.headers.get('content-type') || '';
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      const message = data && typeof data === 'object' && 'message' in data
+        ? data.message
+        : JSON.stringify(data);
+      setApiStatus(`API status: ${message}`);
+      console.log('API says:', message);
+      return;
+    }
+    const text = await response.text();
+    const message = text || 'No status available';
+    setApiStatus(`API status: ${message}`);
+    console.log('API says:', message);
+  })
+  .catch(err => {
+    setApiStatus('API status: offline');
+    console.error('API error', err);
+  });
 
 // Render the appropriate section immediately
 updateUI();
