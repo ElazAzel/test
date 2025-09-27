@@ -1,0 +1,32 @@
+node_modules
+.env
+package-lock.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+/dist
+/build
+backend/data.json
+
+# Misc
+.DS_Store
+
+# Binary assets
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+*.zip
+*.tar
+*.gz
+*.mp3
+*.mp4
+*.mov
+*.avi
